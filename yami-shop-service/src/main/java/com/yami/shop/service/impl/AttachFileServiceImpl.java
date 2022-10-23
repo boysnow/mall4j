@@ -12,12 +12,12 @@ package com.yami.shop.service.impl;
 
 import java.util.Date;
 
-import cn.hutool.core.util.IdUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.storage.BucketManager;
@@ -32,8 +32,7 @@ import com.yami.shop.service.AttachFileService;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.RandomUtil;
-import org.springframework.transaction.annotation.Transactional;
+import cn.hutool.core.util.IdUtil;
 
 /**
  *
@@ -72,9 +71,13 @@ public class AttachFileServiceImpl extends ServiceImpl<AttachFileMapper, AttachF
 		attachFile.setUploadTime(new Date());
 		attachFileMapper.insert(attachFile);
 
-		String upToken = auth.uploadToken(qiniu.getBucket(),fileName);
-	    Response response = uploadManager.put(bytes, fileName, upToken);
-	    Json.parseObject(response.bodyString(),  DefaultPutRet.class);
+		try {
+			String upToken = auth.uploadToken(qiniu.getBucket(),fileName);
+		    Response response = uploadManager.put(bytes, fileName, upToken);
+		    Json.parseObject(response.bodyString(),  DefaultPutRet.class);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 		return fileName;
 	}
 
